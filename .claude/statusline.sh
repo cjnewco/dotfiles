@@ -49,7 +49,7 @@ fi
 # Context: user@host
 user=$(id -un)
 if [[ $user != "$DEFAULT_USER" || -n $SSH_CLIENT ]]; then
-  segment 0 9 "${user}@$(hostname -s)"
+  segment 0 9 "${user}@$(hostname -s 2>/dev/null || hostname)"
 fi
 
 # Dir: last path component (like %1/)
