@@ -83,6 +83,7 @@ end_prompt
 
 # Claude info tail (dim, outside the powerline segments)
 tail=""
+limits=""
 [[ -n $model ]] && tail+="$model"
 bar() { # percent, ANSI color number -> 10-cell bar; filled cells bright
   local pct=${1%.*} color=$2 width=10 filled i full="" empty=""
@@ -102,8 +103,8 @@ if [[ -n $five ]]; then
   elif (( five_i >= 75 )); then five_color=3
   else five_color=2
   fi
-  tail+="${tail:+ · }5h $(bar "$five" "$five_color") ${five_i}%"
-  [[ -n $five_reset ]] && tail+=" (resets $( (date -d "@$five_reset" +%-l:%M%p 2>/dev/null || /bin/date -r "$five_reset" +%-l:%M%p) | tr APM apm))"
+  limits+="5h $(bar "$five" "$five_color") ${five_i}%"
+  [[ -n $five_reset ]] && limits+=" (resets $( (date -d "@$five_reset" +%-l:%M%p 2>/dev/null || /bin/date -r "$five_reset" +%-l:%M%p) | tr APM apm))"
 fi
 if [[ -n $week ]]; then
   week_i=${week%.*}
@@ -111,9 +112,22 @@ if [[ -n $week ]]; then
   elif (( week_i >= 75 )); then week_color=3
   else week_color=2
   fi
-  tail+="${tail:+ · }7d $(bar "$week" "$week_color") ${week_i}%"
-  [[ -n $week_reset ]] && tail+=" (resets $( (date -d "@$week_reset" "+%a %-l:%M%p" 2>/dev/null || /bin/date -r "$week_reset" "+%a %-l:%M%p") | tr APM apm))"
+  limits+="${limits:+ · }7d $(bar "$week" "$week_color") ${week_i}%"
+  [[ -n $week_reset ]] && limits+=" (resets $( (date -d "@$week_reset" "+%a %-l:%M%p" 2>/dev/null || /bin/date -r "$week_reset" "+%a %-l:%M%p") | tr APM apm))"
 fi
+
+visible_width() { # strip ANSI, count code points (drop UTF-8 continuation bytes; locale-independent)
+  printf '%s' "$1" | sed $'s/\033\\[[0-9;]*m//g' | LC_ALL=C tr -d '\200-\277' | wc -c | tr -d ' '
+}
+
+# Limits share the line when they fit in $COLUMNS, otherwise drop to a second row
 [[ -n $tail ]] && out+=" ${ESC}[2m${tail}${ESC}[0m"
+if [[ -n $limits ]]; then
+  if [[ -z $COLUMNS ]] || (( $(visible_width "$out") + 3 + $(visible_width "$limits") <= COLUMNS )); then
+    out+=" ${ESC}[2m${tail:+· }${limits}${ESC}[0m"
+  else
+    out+=$'\n'"${ESC}[2m${limits}${ESC}[0m"
+  fi
+fi
 
 printf '%s' "$out"
