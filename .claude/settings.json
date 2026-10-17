@@ -1,0 +1,13 @@
+{
+  "model": "claude-opus-5-5",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh",
+    "padding": 0
+  },
+  "tui": "fullscreen",
+  "theme": "dark-ansi",
+  "verbose": false,
+  "preferredNotifChannel": "terminal_bell",
+  "switchModelsOnFlag": true
+}
